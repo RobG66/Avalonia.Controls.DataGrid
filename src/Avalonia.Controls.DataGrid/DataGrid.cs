@@ -32,6 +32,7 @@ using Avalonia.Controls.Metadata;
 using Avalonia.Input.GestureRecognizers;
 using Avalonia.Styling;
 using Avalonia.Reactive;
+using Avalonia.Threading;
 
 namespace Avalonia.Controls
 {
@@ -139,6 +140,9 @@ namespace Avalonia.Controls
         private int? _mouseOverRowIndex;    // -1 is used for the 'new row'
         private bool _isDragSelecting;
         private int _dragSelectLastSlot = -1;
+        private DispatcherTimer _dragScrollTimer;
+        private Point _dragScrollLastPosition;
+        private bool _dragScrollDirection; // false = up, true = down
         private DataGridColumn _previousCurrentColumn;
         private object _previousCurrentItem;
         private double[] _rowGroupHeightsByLevel;
@@ -3183,18 +3187,55 @@ namespace Avalonia.Controls
             return UpdateStateOnMouseLeftButtonDown(pointerPressedEventArgs, columnIndex, slot, allowEdit, shift, ctrl);
         }
 
-        internal void UpdateStateOnDragSelectMove(int slot)
+        private const double DATAGRID_dragSelectScrollMargin = 30;
+        private const int DATAGRID_dragSelectScrollSpeed = 50;
+
+        internal void UpdateStateOnDragSelectMove(PointerEventArgs e)
         {
-            if (!_isDragSelecting || slot < 0 || slot == _dragSelectLastSlot)
+            if (!_isDragSelecting || SelectionMode != DataGridSelectionMode.Extended || _rowsPresenter == null)
                 return;
-            if (SelectionMode != DataGridSelectionMode.Extended)
+
+            var pos = e.GetPosition(_rowsPresenter);
+            _dragScrollLastPosition = pos;
+
+            // Always update selection from the current pointer position
+            DragSelectUpdateFromPosition(pos.Y);
+
+            // Start/stop auto-scroll timer based on whether pointer is in the scroll margin zones
+            double presenterHeight = _rowsPresenter.Bounds.Height;
+            if (pos.Y < DATAGRID_dragSelectScrollMargin)
+                StartDragScrollTimer(scrollDown: false);
+            else if (pos.Y > presenterHeight - DATAGRID_dragSelectScrollMargin)
+                StartDragScrollTimer(scrollDown: true);
+            else
+                StopDragScrollTimer();
+        }
+
+        private void DragSelectUpdateFromPosition(double y)
+        {
+            // Clamp to first/last visible slot if outside bounds
+            int slot = -1;
+            foreach (var element in DisplayData.GetScrollingElements())
+            {
+                if (element is DataGridRow row)
+                {
+                    if (y < row.Bounds.Top && slot < 0)
+                        slot = row.Slot;  // above first row: use first
+                    else if (y >= row.Bounds.Top && y < row.Bounds.Bottom)
+                        slot = row.Slot;  // within this row
+                    else if (y >= row.Bounds.Bottom)
+                        slot = row.Slot;  // below: keep updating so we end up at the last row
+                }
+            }
+
+            if (slot < 0 || slot == _dragSelectLastSlot)
                 return;
 
             _dragSelectLastSlot = slot;
             NoSelectionChangeCount++;
             try
             {
-                UpdateSelectionAndCurrency(CurrentColumnIndex, slot, DataGridSelectionAction.SelectFromAnchorToCurrent, scrollIntoView: true);
+                UpdateSelectionAndCurrency(CurrentColumnIndex, slot, DataGridSelectionAction.SelectFromAnchorToCurrent, scrollIntoView: false);
             }
             finally
             {
@@ -3202,10 +3243,49 @@ namespace Avalonia.Controls
             }
         }
 
+        private void StartDragScrollTimer(bool scrollDown)
+        {
+            _dragScrollDirection = scrollDown;
+            if (_dragScrollTimer != null)
+                return;
+            _dragScrollTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(DATAGRID_dragSelectScrollSpeed) };
+            _dragScrollTimer.Tick += OnDragScrollTick;
+            // Fire immediately so there's no initial delay
+            OnDragScrollTick(null, EventArgs.Empty);
+            _dragScrollTimer.Start();
+        }
+
+        private void StopDragScrollTimer()
+        {
+            if (_dragScrollTimer == null)
+                return;
+            _dragScrollTimer.Stop();
+            _dragScrollTimer.Tick -= OnDragScrollTick;
+            _dragScrollTimer = null;
+        }
+
+        private void OnDragScrollTick(object sender, EventArgs e)
+        {
+            if (!_isDragSelecting || _rowsPresenter == null)
+            {
+                StopDragScrollTimer();
+                return;
+            }
+
+            // Scroll one row in the appropriate direction
+            ProcessVerticalScroll(_dragScrollDirection
+                ? ScrollEventType.SmallIncrement
+                : ScrollEventType.SmallDecrement);
+
+            // Update selection to the boundary row now visible after scrolling
+            DragSelectUpdateFromPosition(_dragScrollLastPosition.Y);
+        }
+
         internal void EndDragSelection()
         {
             _isDragSelecting = false;
             _dragSelectLastSlot = -1;
+            StopDragScrollTimer();
         }
 
         internal void UpdateVerticalScrollBar()

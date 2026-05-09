@@ -180,7 +180,7 @@ namespace Avalonia.Controls
             if (OwningGrid == null || OwningRow == null)
                 return;
             if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
-                OwningGrid.UpdateStateOnDragSelectMove(OwningRow.Slot);
+                OwningGrid.UpdateStateOnDragSelectMove(e);
         }
 
         protected override void OnPointerReleased(PointerReleasedEventArgs e)

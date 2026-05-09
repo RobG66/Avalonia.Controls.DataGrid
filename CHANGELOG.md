@@ -15,7 +15,27 @@ All notable changes to `Avalonia.Controls.DataGrid` are documented here.
   - Moving back over already-selected rows correctly shrinks the selection (see bug fix
     below) so the live range always reflects anchor → current pointer position.
 
+- **Auto-scroll during drag-select**  
+  When dragging to select rows, moving the pointer into a 30 px margin zone near the
+  top or bottom edge of the rows presenter now automatically scrolls the grid at
+  50 ms intervals (one row per tick via `ProcessVerticalScroll`) while continuously
+  extending the selection to the nearest visible boundary row.  Scroll and selection
+  are kept separate: the `DispatcherTimer` only scrolls; selection is re-evaluated
+  from the stored pointer position after each tick.  The timer fires once immediately
+  on start (no initial delay) and is stopped as soon as the pointer moves back into
+  the safe zone or the mouse button is released.  
+  Inspired by the auto-scroll pattern used in `Avalonia.Controls.TreeDataGrid`.
+
 ### Fixed
+
+- **Drag-select did not extend selection across rows** (regression fix)  
+  Because Avalonia gives implicit pointer capture to the initially-pressed element,
+  `OnPointerMoved` always fired on the same `DataGridCell` / `DataGridRowHeader`,
+  so the slot never changed and selection was never extended.  
+  Fix: `UpdateStateOnDragSelectMove` now accepts `PointerEventArgs` instead of a
+  pre-calculated slot, calls `e.GetPosition(_rowsPresenter)` to obtain the pointer
+  Y coordinate, and walks `DisplayData.GetScrollingElements()` to find the actual
+  `DataGridRow` under the pointer.
 
 - **Range selection did not deselect rows when shrinking the range**  
   When using `Shift`+arrow keys (or the new drag-select feature) to extend a range

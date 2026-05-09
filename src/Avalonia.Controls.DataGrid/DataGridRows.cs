@@ -584,7 +584,22 @@ namespace Avalonia.Controls
             _noSelectionChangeCount++;
             try
             {
-                if (/*isSelected &&*/ !_selectedItems.ContainsAll(startSlot, endSlot))
+                // Deselect any rows that are currently selected but fall outside [startSlot, endSlot].
+                // This fixes the bug where shrinking a Shift- or drag-selection range left stale
+                // selected rows beyond the new anchor-to-current bounds.
+                if (_selectedItems.Count > 0)
+                {
+                    foreach (int selectedSlot in _selectedItems.GetIndexes().ToList())
+                    {
+                        if (selectedSlot < startSlot || selectedSlot > endSlot)
+                        {
+                            SelectSlots(selectedSlot, selectedSlot, false);
+                            SelectionHasChanged = true;
+                        }
+                    }
+                }
+
+                if (!_selectedItems.ContainsAll(startSlot, endSlot))
                 {
                     // At least one row gets selected
                     SelectSlots(startSlot, endSlot, true);

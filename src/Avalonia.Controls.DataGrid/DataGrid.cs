@@ -137,6 +137,8 @@ namespace Avalonia.Controls
         private bool _makeFirstDisplayedCellCurrentCellPending;
         private bool _measured;
         private int? _mouseOverRowIndex;    // -1 is used for the 'new row'
+        private bool _isDragSelecting;
+        private int _dragSelectLastSlot = -1;
         private DataGridColumn _previousCurrentColumn;
         private object _previousCurrentItem;
         private double[] _rowGroupHeightsByLevel;
@@ -3181,6 +3183,31 @@ namespace Avalonia.Controls
             return UpdateStateOnMouseLeftButtonDown(pointerPressedEventArgs, columnIndex, slot, allowEdit, shift, ctrl);
         }
 
+        internal void UpdateStateOnDragSelectMove(int slot)
+        {
+            if (!_isDragSelecting || slot < 0 || slot == _dragSelectLastSlot)
+                return;
+            if (SelectionMode != DataGridSelectionMode.Extended)
+                return;
+
+            _dragSelectLastSlot = slot;
+            NoSelectionChangeCount++;
+            try
+            {
+                UpdateSelectionAndCurrency(CurrentColumnIndex, slot, DataGridSelectionAction.SelectFromAnchorToCurrent, scrollIntoView: true);
+            }
+            finally
+            {
+                NoSelectionChangeCount--;
+            }
+        }
+
+        internal void EndDragSelection()
+        {
+            _isDragSelecting = false;
+            _dragSelectLastSlot = -1;
+        }
+
         internal void UpdateVerticalScrollBar()
         {
             if (_vScrollBar != null && _vScrollBar.IsVisible)
@@ -5935,6 +5962,9 @@ namespace Avalonia.Controls
             {
                 FocusEditingCell(setFocus: true);
             }
+
+            _isDragSelecting = true;
+            _dragSelectLastSlot = slot;
 
             return true;
         }

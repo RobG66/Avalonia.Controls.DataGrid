@@ -186,6 +186,22 @@ namespace Avalonia.Controls.Primitives
             base.OnPointerExited(e);
         }
 
+        protected override void OnPointerMoved(PointerEventArgs e)
+        {
+            base.OnPointerMoved(e);
+            if (OwningGrid == null || Slot < 0)
+                return;
+            if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+                OwningGrid.UpdateStateOnDragSelectMove(Slot);
+        }
+
+        protected override void OnPointerReleased(PointerReleasedEventArgs e)
+        {
+            base.OnPointerReleased(e);
+            if (OwningGrid != null)
+                OwningGrid.EndDragSelection();
+        }
+
         //TODO TabStop
         private void DataGridRowHeader_PointerPressed(object sender, PointerPressedEventArgs e)
         {

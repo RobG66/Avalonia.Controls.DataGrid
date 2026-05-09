@@ -4,6 +4,6 @@
  An unofficial fork:
  
  - Fixes keyboard multiselect
- - Introduces mouse drag select based off the Avalonia Treedatagrid control source.
+ - Introduces mouse drag select
 
 See changelog

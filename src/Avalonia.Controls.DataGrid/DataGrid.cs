@@ -2825,7 +2825,8 @@ namespace Avalonia.Controls
                 {
                     slot = backupSlot;
                 }
-                if (slot < 0 || slot > SlotCount)
+                // Changed from > to >= because the slot index is zero-based
+                if (slot < 0 || slot >= SlotCount)
                 {
                     return;
                 }
@@ -3228,7 +3229,7 @@ namespace Avalonia.Controls
                 }
             }
 
-            if (slot < 0 || slot == _dragSelectLastSlot)
+            if (slot < 0 || slot == _dragSelectLastSlot || IsSlotOutOfSelectionBounds(slot))
                 return;
 
             _dragSelectLastSlot = slot;

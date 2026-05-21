@@ -443,6 +443,25 @@ namespace Avalonia.Controls
             EnsureHorizontalLayout();
             InvalidateColumnHeadersMeasure();
 
+            // Fix: When a column is made visible, reset its width measurement state so that
+            // Auto/SizeToHeader columns remeasure from scratch rather than using stale values
+            // from before the column was hidden. Without this, columns appear squished (~5px)
+            // because the DataGrid reuses the last computed DesiredValue/DisplayValue which
+            // was never properly measured for a column that started hidden or was previously hidden.
+            if (updatedColumn.IsVisible)
+            {
+                updatedColumn.IsInitialDesiredWidthDetermined = false;
+                updatedColumn.SetWidthInternalNoCallback(
+                    new DataGridLength(
+                        updatedColumn.Width.Value,
+                        updatedColumn.Width.UnitType,
+                        double.NaN,  // force DesiredValue to be recalculated by CoerceWidth
+                        double.NaN   // force DisplayValue to be recalculated by CoerceWidth
+                    )
+                );
+                OnColumnWidthChanged(updatedColumn);
+            }
+
             if (updatedColumn.IsVisible &&
                 ColumnsInternal.VisibleColumnCount == 1 && CurrentColumnIndex == -1)
             {
@@ -466,6 +485,7 @@ namespace Avalonia.Controls
                 row.InvalidateCellsIndex();
             }
         }
+
 
         internal void OnColumnVisibleStateChanging(DataGridColumn targetColumn)
         {

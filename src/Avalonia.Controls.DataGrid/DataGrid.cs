@@ -1,4 +1,4 @@
-﻿// This source is subject to the Microsoft Public License (Ms-PL).
+// This source is subject to the Microsoft Public License (Ms-PL).
 // Please see http://go.microsoft.com/fwlink/?LinkID=131993 for details.
 // All other rights reserved.
 
@@ -5891,12 +5891,14 @@ namespace Avalonia.Controls
 
                         // total height of the display area
                         _vScrollBar.ViewportSize = cellsHeight;
+                        _vScrollBar.LargeChange = cellsHeight;
                         _vScrollBar.IsEnabled = true;
                     }
                     else
                     {
                         _vScrollBar.Maximum = 0;
                         _vScrollBar.ViewportSize = 0;
+                        _vScrollBar.LargeChange = 0;
                         _vScrollBar.IsEnabled = false;
                     }
 

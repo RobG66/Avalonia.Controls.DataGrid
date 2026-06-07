@@ -1,6 +1,14 @@
 # Changelog
 All notable changes to `Avalonia.Controls.DataGrid` are documented here.
 ---
+## 2026-06-07
+### Fixed
+- **Clicking the vertical scrollbar track scrolled only 1 row instead of 1 page**  
+  When clicking on the vertical scrollbar track (the space above or below the thumb), the scrollbar scrolled by a small increment (typically equivalent to one row/small change) rather than a page.  
+  Root cause: `UpdateVerticalScrollBar` set the scrollbar's `ViewportSize` but never updated its `LargeChange` property. Without `LargeChange` defined, the scrollbar did not know the page size, falling back to standard small-increment values.  
+  Fix: Set `_vScrollBar.LargeChange = cellsHeight` when the vertical scrollbar is active (matching the pattern used for the horizontal scrollbar), and reset it to `0` when disabled.
+
+---
 ## 2026-05-21
 ### Fixed
 - **Columns appear squished (~5px) when made visible after being hidden**  

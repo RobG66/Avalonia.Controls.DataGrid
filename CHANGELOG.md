@@ -1,6 +1,14 @@
 # Changelog
 All notable changes to `Avalonia.Controls.DataGrid` are documented here.
 ---
+## 2026-06-28
+### Added
+- **Fork Documentation**: Updated `readme.md` to document features and bug fixes unique to this fork.
+
+### Changed
+- **Upstream Sync**: Merged latest official Avalonia upstream commits, including upgrading Avalonia to 12.0.5, scrollbar AutoHide fixes, LostFocus regression fixes, and layout rounding ScrollBar fixes.
+
+---
 ## 2026-06-07
 ### Fixed
 - **Clicking the vertical scrollbar track scrolled only 1 row instead of 1 page**  

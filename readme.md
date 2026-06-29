@@ -1,67 +1,27 @@
-# Changelog
-All notable changes to `Avalonia.Controls.DataGrid` are documented here.
----
-## 2026-06-07
-### Fixed
-- **Clicking the vertical scrollbar track scrolled only 1 row instead of 1 page**  
-  When clicking on the vertical scrollbar track (the space above or below the thumb), the scrollbar scrolled by a small increment (typically equivalent to one row/small change) rather than a page.  
-  Root cause: `UpdateVerticalScrollBar` set the scrollbar's `ViewportSize` but never updated its `LargeChange` property. Without `LargeChange` defined, the scrollbar did not know the page size, falling back to standard small-increment values.  
-  Fix: Set `_vScrollBar.LargeChange = cellsHeight` when the vertical scrollbar is active (matching the pattern used for the horizontal scrollbar), and reset it to `0` when disabled.
+# Avalonia DataGrid
 
----
-## 2026-05-21
-### Fixed
-- **Columns appear squished (~5px) when made visible after being hidden**  
-  When toggling a column from `IsVisible=false` to `IsVisible=true`, Auto and
-  SizeToHeader columns rendered at near-zero width until the window was resized.  
-  Root cause: `OnColumnVisibleStateChanged` did not reset the column's width
-  measurement state. The DataGrid reused stale `DesiredValue`/`DisplayValue` from
-  before the column was hidden (or from initial construction when the column started
-  hidden), so `AutoSizeColumn` skipped remeasuring it entirely.  
-  Fix: When a column becomes visible, `IsInitialDesiredWidthDetermined` is reset to
-  `false` and the column's `DesiredValue`/`DisplayValue` are set to `double.NaN` via
-  `SetWidthInternalNoCallback`, forcing `CoerceWidth` to recalculate them from
-  scratch. `OnColumnWidthChanged` is then called to trigger the layout pass.  
-  Affects: any column using `Auto`, `SizeToHeader`, or `SizeToCells` width modes that
-  starts hidden or is toggled hidden/visible at runtime.
+## About
 
----
-## 2026-05-08
-### Added
-- **Drag-to-select rows** (`DataGridSelectionMode.Extended` only)  
-  Holding the left mouse button and moving the pointer across rows now extends the
-  selection using the same anchor-based range logic as `Shift`+arrow-key navigation.
-  - Works on both cell (`DataGridCell`) and row-header (`DataGridRowHeader`) areas.
-  - Moving back over already-selected rows correctly shrinks the selection (see bug fix
-    below) so the live range always reflects anchor → current pointer position.
-- **Auto-scroll during drag-select**  
-  When dragging to select rows, moving the pointer into a 30 px margin zone near the
-  top or bottom edge of the rows presenter now automatically scrolls the grid at
-  50 ms intervals (one row per tick via `ProcessVerticalScroll`) while continuously
-  extending the selection to the nearest visible boundary row.  Scroll and selection
-  are kept separate: the `DispatcherTimer` only scrolls; selection is re-evaluated
-  from the stored pointer position after each tick.  The timer fires once immediately
-  on start (no initial delay) and is stopped as soon as the pointer moves back into
-  the safe zone or the mouse button is released.  
-  Inspired by the auto-scroll pattern used in `Avalonia.Controls.TreeDataGrid`.
-### Fixed
-- **Drag-select did not extend selection across rows** (regression fix)  
-  Because Avalonia gives implicit pointer capture to the initially-pressed element,
-  `OnPointerMoved` always fired on the same `DataGridCell` / `DataGridRowHeader`,
-  so the slot never changed and selection was never extended.  
-  Fix: `UpdateStateOnDragSelectMove` now accepts `PointerEventArgs` instead of a
-  pre-calculated slot, calls `e.GetPosition(_rowsPresenter)` to obtain the pointer
-  Y coordinate, and walks `DisplayData.GetScrollingElements()` to find the actual
-  `DataGridRow` under the pointer.
-- **Range selection did not deselect rows when shrinking the range**  
-  When using `Shift`+arrow keys (or the new drag-select feature) to extend a range
-  selection, moving the cursor *back* toward the anchor left previously-selected rows
-  highlighted even though they were no longer within the anchor-to-current range.  
-  Root cause: `SetRowsSelection` only called `SelectSlots(..., true)` and never
-  removed slots that fell outside the new `[startSlot, endSlot]` bounds.  
-  Fix: `SetRowsSelection` now iterates all currently-selected slots before selecting
-  the new range and calls `SelectSlots(slot, slot, false)` for any slot that lies
-  outside `[startSlot, endSlot]`, correctly shrinking the highlighted region and
-  raising `SelectionChanged` for the removed items.  
-  Affects: `DataGrid.SelectAll()`, `Shift`+arrow-key range selection, and the new
-  mouse drag-select feature.
+The official `DataGrid` control for [Avalonia](https://github.com/AvaloniaUI/Avalonia).  
+
+It displays repeating data in a customizable grid.  
+See the [documentation](https://docs.avaloniaui.net/docs/reference/controls/datagrid/) for more information.
+
+## Fork Features & Bug Fixes
+
+This unofficial fork contains several enhancements and bug fixes not present in the official Avalonia repository:
+
+### Added Features
+- **Drag-to-select rows** (`DataGridSelectionMode.Extended` only): Holding the left mouse button and moving the pointer across rows extends the selection using anchor-based range logic.
+- **Auto-scroll during drag-select**: Dragging rows near the top/bottom edge (30px margin) of the rows presenter automatically scrolls the grid vertically.
+
+### Bug Fixes
+- **Vertical Scrollbar Track Clicking**: Fixed clicking the vertical scrollbar track scrolling only 1 row instead of 1 page.
+- **Column Visibility Width Reset**: Fixed `Auto` and `SizeToHeader` columns appearing squished (~5px) when made visible after being hidden.
+- **Range Selection Shrinking**: Fixed range selection (using `Shift`+arrows or drag-select) not deselecting rows when shrinking the range.
+- **Drag-Select Row Detection**: Fixed drag-select not extending across rows due to implicit pointer capture.
+
+## Status
+
+The `DataGrid` control was initially ported from Silverlight, and was previously part of the [Avalonia main repository](https://github.com/AvaloniaUI/Avalonia).  
+It now lives in its [own repository](https://github.com/AvaloniaUI/Avalonia.Controls.DataGrid): see [this discussion](https://github.com/AvaloniaUI/Avalonia/discussions/18388) for details.

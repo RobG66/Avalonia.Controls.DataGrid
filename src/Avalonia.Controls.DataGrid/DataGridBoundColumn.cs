@@ -61,7 +61,14 @@ namespace Avalonia.Controls
                             var path = compiled.Path.ToString();
                             if (!string.IsNullOrEmpty(path) && compiled.Mode == BindingMode.Default)
                             {
-                                compiled.Mode = BindingMode.TwoWay;
+                                // A StringFormat binding generally isn't safely invertible (e.g.
+                                // "128 kbps" -> int). Forcing TwoWay in that case leaves Avalonia's
+                                // core binding engine to attempt ConvertBack on the formatted string,
+                                // which corrupts cell values during scroll/container recycling.
+                                // See: AvaloniaUI/Avalonia.Controls.DataGrid#102
+                                compiled.Mode = string.IsNullOrEmpty(compiled.StringFormat)
+                                    ? BindingMode.TwoWay
+                                    : BindingMode.OneWay;
                             } 
 
                             if (compiled.Converter == null && string.IsNullOrEmpty(compiled.StringFormat))
@@ -79,7 +86,12 @@ namespace Avalonia.Controls
                             var path = reflection.Path.ToString();
                             if (!string.IsNullOrEmpty(path) && reflection.Mode == BindingMode.Default)
                             {
-                                reflection.Mode = BindingMode.TwoWay;
+                                // See comment in the CompiledBinding branch above:
+                                // StringFormat bindings aren't safely invertible, so don't
+                                // force TwoWay for them (AvaloniaUI/Avalonia.Controls.DataGrid#102).
+                                reflection.Mode = string.IsNullOrEmpty(reflection.StringFormat)
+                                    ? BindingMode.TwoWay
+                                    : BindingMode.OneWay;
                             }
 
                             if (reflection.Converter == null && string.IsNullOrEmpty(reflection.StringFormat))

@@ -1,6 +1,13 @@
 # Changelog
 All notable changes to `Avalonia.Controls.DataGrid` are documented here.
 ---
+## 2026-07-05
+### Fixed
+- **StringFormat bindings on bound columns force TwoWay mode, corrupting cell values during scroll**  
+  A `DataGridBoundColumn` (e.g., `DataGridTextColumn`) bound via `StringFormat` silently defaulted to `BindingMode.TwoWay`, even when the column or grid was read-only. Avalonia's core binding engine then attempted `ConvertBack` on the formatted string, which failed or produced wrong values, causing cell content corruption and unreliable scrolling during container recycling.  
+  Fix: Only default to `TwoWay` when there is no `StringFormat`; a `StringFormat` binding now defaults to `OneWay`.
+
+---
 ## 2026-06-28
 ### Added
 - **Fork Documentation**: Updated `readme.md` to document features and bug fixes unique to this fork.

@@ -16,6 +16,7 @@ This unofficial fork contains several enhancements and bug fixes not present in 
 - **Auto-scroll during drag-select**: Dragging rows near the top/bottom edge (30px margin) of the rows presenter automatically scrolls the grid vertically.
 
 ### Bug Fixes
+- **StringFormat Binding Mode**: Fixed `StringFormat` bindings on bound columns forcing `TwoWay` mode (even on read-only grids), which caused cell content corruption during scroll recycling.
 - **Vertical Scrollbar Track Clicking**: Fixed clicking the vertical scrollbar track scrolling only 1 row instead of 1 page.
 - **Column Visibility Width Reset**: Fixed `Auto` and `SizeToHeader` columns appearing squished (~5px) when made visible after being hidden.
 - **Range Selection Shrinking**: Fixed range selection (using `Shift`+arrows or drag-select) not deselecting rows when shrinking the range.
